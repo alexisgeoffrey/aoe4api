@@ -20,23 +20,21 @@ type (
 		Request() (Request, error)
 	}
 
-	requestBuilder struct {
-		client    *http.Client
-		userAgent string
-		payload   *payload
-	}
+	requestBuilder struct{ request }
 )
 
 func NewRequestBuilder() RequestBuilder {
 	return &requestBuilder{
-		client: http.DefaultClient,
-		payload: &payload{
-			Region:    int(Global),
-			Versus:    "players",
-			MatchType: "unranked",
-			TeamSize:  "1v1",
-			Page:      1,
-			Count:     100,
+		request{
+			client: http.DefaultClient,
+			payload: &payload{
+				Region:    int(Global),
+				Versus:    "players",
+				MatchType: "unranked",
+				TeamSize:  "1v1",
+				Page:      1,
+				Count:     100,
+			},
 		},
 	}
 }
@@ -147,9 +145,11 @@ func (r *requestBuilder) Request() (Request, error) {
 		}
 	}
 
+	payloadCopy := *r.payload
+
 	return &request{
 		r.client,
 		r.userAgent,
-		r.payload,
+		&payloadCopy,
 	}, nil
 }
