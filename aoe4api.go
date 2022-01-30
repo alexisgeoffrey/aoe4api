@@ -1,3 +1,5 @@
+// Package aoe4api provides functions for retrieving
+// player data from the Age of Empires 4 leaderboard API.
 package aoe4api
 
 import (
