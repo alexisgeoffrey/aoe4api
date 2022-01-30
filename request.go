@@ -4,6 +4,7 @@ package aoe4api
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"sync"
@@ -113,7 +114,7 @@ func (r *request) QueryAllElo() (map[string]string, error) {
 		go func(ts string) {
 			response, err := query(&req)
 			if err != nil {
-				fmt.Printf("error retrieving Elo from AOE api for %s: %v", req.payload.SearchPlayer, err)
+				log.Printf("error retrieving Elo from AOE api for %s: %v", req.payload.SearchPlayer, err)
 			} else {
 				sm.Lock()
 				defer sm.Unlock()
