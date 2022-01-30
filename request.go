@@ -92,9 +92,15 @@ func (r *request) QueryElo() (string, error) {
 func (r *request) QueryAllElo() (map[string]string, error) {
 	var wg sync.WaitGroup
 	sm := &safeMap{respMap: make(map[string]string)}
-	req := *r
 
 	for _, teamSize := range getEloTypes() {
+		payloadCopy := *r.payload
+		req := request{
+			r.client,
+			r.userAgent,
+			&payloadCopy,
+		}
+
 		if teamSize == "custom" {
 			req.payload.MatchType = teamSize
 			req.payload.TeamSize = ""
