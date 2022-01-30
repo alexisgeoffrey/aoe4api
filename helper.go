@@ -22,7 +22,9 @@ func query(r *request) (response, error) {
 		return response{}, fmt.Errorf("error creating POST request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", r.userAgent)
+	if r.userAgent != "" {
+		req.Header.Set("User-Agent", r.userAgent)
+	}
 
 	resp, err := r.client.Do(req)
 	if err != nil {
