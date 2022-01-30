@@ -18,7 +18,7 @@ type (
 	request struct {
 		client    *http.Client
 		userAgent string
-		pLoad     *payload
+		payload   *payload
 	}
 
 	// A Payload represents the contents of a request to the AOE4 API.
@@ -94,10 +94,10 @@ func (r *request) QueryElo() (string, error) {
 		return "", fmt.Errorf("error querying aoe api or inserting in map: %w", err)
 	}
 
-	if elo, ok := sm.respMap[r.pLoad.MatchType]; ok {
+	if elo, ok := sm.respMap[r.payload.MatchType]; ok {
 		return elo, nil
 	}
-	return "", fmt.Errorf("no Elo value found for match type %s for username %s", r.pLoad.MatchType, r.pLoad.SearchPlayer)
+	return "", fmt.Errorf("no Elo value found for match type %s for username %s", r.payload.MatchType, r.payload.SearchPlayer)
 }
 
 // QueryAllElo queries the AOE4 API and returns Elo values for all Elo types
@@ -109,17 +109,17 @@ func (r *request) QueryAllElo() (map[string]string, error) {
 	for _, teamSize := range getEloTypes() {
 		req := *r
 		if teamSize == "custom" {
-			req.pLoad.MatchType = teamSize
-			req.pLoad.TeamSize = ""
+			req.payload.MatchType = teamSize
+			req.payload.TeamSize = ""
 		} else {
-			req.pLoad.MatchType = "unranked"
-			req.pLoad.TeamSize = teamSize
+			req.payload.MatchType = "unranked"
+			req.payload.TeamSize = teamSize
 		}
 
 		wg.Add(1)
 		go func() {
 			if err := queryEloToMap(&req, sm); err != nil {
-				fmt.Printf("error retrieving Elo from AOE api for %s: %v", req.pLoad.SearchPlayer, err)
+				fmt.Printf("error retrieving Elo from AOE api for %s: %v", req.payload.SearchPlayer, err)
 			}
 			wg.Done()
 		}()

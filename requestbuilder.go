@@ -1,6 +1,10 @@
 package aoe4api
 
-import "net/http"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+)
 
 type (
 	RequestBuilder interface {
@@ -13,24 +17,26 @@ type (
 		SetSearchPlayer(string) RequestBuilder
 		SetPage(int) RequestBuilder
 		SetCount(int) RequestBuilder
-		Build() (Request, error)
+		Request() (Request, error)
 	}
 
 	requestBuilder struct {
 		client    *http.Client
 		userAgent string
-		pLoad     *payload
+		payload   *payload
 	}
 )
 
 func NewRequestBuilder() RequestBuilder {
 	return &requestBuilder{
 		client: http.DefaultClient,
-		pLoad: &payload{
+		payload: &payload{
 			Region:    int(Global),
 			Versus:    "players",
 			MatchType: "unranked",
+			TeamSize:  "1v1",
 			Page:      1,
+			Count:     100,
 		},
 	}
 }
@@ -46,7 +52,7 @@ func (r *requestBuilder) SetUserAgent(userAgent string) RequestBuilder {
 }
 
 func (r *requestBuilder) SetRegion(reg Region) RequestBuilder {
-	r.pLoad.Region = int(reg)
+	r.payload.Region = int(reg)
 	return r
 }
 
@@ -60,7 +66,7 @@ func (r *requestBuilder) SetVersus(vs Versus) RequestBuilder {
 		vsString = "ai"
 	}
 
-	r.pLoad.Versus = vsString
+	r.payload.Versus = vsString
 	return r
 }
 
@@ -82,7 +88,7 @@ func (r *requestBuilder) SetMatchType(mt MatchType) RequestBuilder {
 		mtString = "aiexpert"
 	}
 
-	r.pLoad.MatchType = mtString
+	r.payload.MatchType = mtString
 	return r
 }
 
@@ -100,25 +106,50 @@ func (r *requestBuilder) SetTeamSize(ts TeamSize) RequestBuilder {
 		teamSizeString = "4v4"
 	}
 
-	r.pLoad.Versus = teamSizeString
+	r.payload.Versus = teamSizeString
 	return r
 }
 
 func (r *requestBuilder) SetSearchPlayer(searchPlayer string) RequestBuilder {
-	r.pLoad.SearchPlayer = searchPlayer
+	r.payload.SearchPlayer = searchPlayer
 	return r
 }
 
 func (r *requestBuilder) SetPage(page int) RequestBuilder {
-	r.pLoad.Page = page
+	r.payload.Page = page
 	return r
 }
 
 func (r *requestBuilder) SetCount(count int) RequestBuilder {
-	r.pLoad.Count = count
+	r.payload.Count = count
 	return r
 }
 
-func (r *requestBuilder) Build() (Request, error) {
-	return &request{}, nil // TODO
+func (r *requestBuilder) Request() (Request, error) {
+	if r.payload.Page < 1 {
+		return nil, errors.New("cannot have a negative page number")
+	}
+	if r.payload.Count < 1 {
+		return nil, errors.New("cannot have a negative result count")
+	}
+	if r.payload.Region < int(Europe) || r.payload.Region > int(Global) {
+		return nil, errors.New("invalid region")
+	}
+
+	switch r.payload.MatchType {
+	case "unranked", "custom":
+		if r.payload.Versus == "ai" {
+			return nil, fmt.Errorf("cannot have both match type as '%s' and versus as 'AI'", r.payload.MatchType)
+		}
+	case "aieasy", "aimedium", "aihard", "aiexpert":
+		if r.payload.Versus == "players" {
+			return nil, fmt.Errorf("cannot have both match type as '%s' and versus as 'Players'", r.payload.MatchType)
+		}
+	}
+
+	return &request{
+		r.client,
+		r.userAgent,
+		r.payload,
+	}, nil
 }

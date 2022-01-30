@@ -10,7 +10,7 @@ import (
 )
 
 func queryEloToMap(r *request, sm *safeMap) error {
-	payloadBytes, err := json.Marshal(r.pLoad)
+	payloadBytes, err := json.Marshal(r.payload)
 	if err != nil {
 		return fmt.Errorf("error marshaling json payload: %w", err)
 	}
@@ -51,7 +51,7 @@ func queryEloToMap(r *request, sm *safeMap) error {
 
 	sm.Lock()
 	defer sm.Unlock()
-	sm.respMap[r.pLoad.MatchType] = strconv.Itoa(respBodyJson.Items[0].Elo)
+	sm.respMap[r.payload.MatchType] = strconv.Itoa(respBodyJson.Items[0].Elo)
 
 	return nil
 }
