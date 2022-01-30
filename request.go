@@ -90,7 +90,7 @@ func (r *request) QueryElo() (string, error) {
 // for a specific username as a map of Elo types and Elo values.
 func (r *request) QueryAllElo() (map[string]string, error) {
 	var wg sync.WaitGroup
-	sm := &safeMap{respMap: make(map[string]string)}
+	sm := &safeMap{respMap: map[string]string{}}
 
 	for _, teamSize := range getEloTypes() {
 		payloadCopy := *r.payload
@@ -114,9 +114,9 @@ func (r *request) QueryAllElo() (map[string]string, error) {
 			if err != nil {
 				log.Printf("error retrieving Elo from AOE api for %s: %v", req.payload.SearchPlayer, err)
 			} else {
-				sm.Lock()
-				defer sm.Unlock()
 				if len(response.Items) > 0 {
+					sm.Lock()
+					defer sm.Unlock()
 					sm.respMap[ts] = strconv.Itoa(response.Items[0].Elo)
 				}
 			}
