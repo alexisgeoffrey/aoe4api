@@ -8,6 +8,8 @@ import (
 	"net/http"
 )
 
+const apiUrl = "https://api.ageofempires.com/api/ageiv/Leaderboard"
+
 func query(r *request) (response, error) {
 	payloadBytes, err := json.Marshal(r.payload)
 	if err != nil {
@@ -15,7 +17,7 @@ func query(r *request) (response, error) {
 	}
 	body := bytes.NewReader(payloadBytes)
 
-	req, err := http.NewRequest("POST", "https://api.ageofempires.com/api/ageiv/Leaderboard", body)
+	req, err := http.NewRequest("POST", apiUrl, body)
 	if err != nil {
 		return response{}, fmt.Errorf("error creating POST request: %w", err)
 	}

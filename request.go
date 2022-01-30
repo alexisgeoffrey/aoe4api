@@ -110,18 +110,20 @@ func (r *request) QueryAllElo() (map[string]string, error) {
 		}
 
 		wg.Add(1)
-		go func() {
+		go func(ts string) {
 			response, err := query(&req)
 			if err != nil {
 				fmt.Printf("error retrieving Elo from AOE api for %s: %v", req.payload.SearchPlayer, err)
 			} else {
 				sm.Lock()
 				defer sm.Unlock()
-				sm.respMap[r.payload.MatchType] = strconv.Itoa(response.Items[0].Elo)
+				if len(response.Items) > 0 {
+					sm.respMap[ts] = strconv.Itoa(response.Items[0].Elo)
+				}
 			}
 
 			wg.Done()
-		}()
+		}(teamSize)
 	}
 	wg.Wait()
 
