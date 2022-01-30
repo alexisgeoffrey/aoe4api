@@ -5,12 +5,13 @@ package aoe4api
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
 type (
 	Request interface {
-		Query() (PlayerInfo, error)
+		Query() ([]playerInfo, error)
 		QueryElo() (string, error)
 		QueryAllElo() (map[string]string, error)
 	}
@@ -33,11 +34,11 @@ type (
 	}
 
 	response struct {
-		Count int              `json:"count"`
-		Items []playerInfoData `json:"items"`
+		Count int          `json:"count"`
+		Items []playerInfo `json:"items"`
 	}
 
-	playerInfoData struct {
+	playerInfo struct {
 		GameID       string      `json:"gameId"`
 		UserID       string      `json:"userId"`
 		RlUserID     int         `json:"rlUserId"`
@@ -56,25 +57,6 @@ type (
 		RankIcon     string      `json:"rankIcon"`
 	}
 
-	PlayerInfo struct {
-		GameID       string
-		UserID       string
-		RlUserID     int
-		UserName     string
-		AvatarURL    string
-		PlayerNumber interface{} // For now, will always be nil
-		Elo          int
-		EloRating    int
-		Rank         int
-		Region       string
-		Wins         int
-		WinPercent   float64
-		Losses       int
-		WinStreak    int
-		RankLevel    string
-		RankIcon     string
-	}
-
 	safeMap struct {
 		sync.Mutex
 		respMap map[string]string
@@ -82,21 +64,26 @@ type (
 )
 
 // Query queries the AOE4 API and returns the API response as a Response struct.
-func (r *request) Query() (PlayerInfo, error) {
-	return PlayerInfo{}, nil // TODO
+func (r *request) Query() ([]playerInfo, error) {
+	result, err := query(r)
+	if err != nil {
+		return nil, fmt.Errorf("error querying aoe api: %w", err)
+	}
+
+	return result.Items, nil
 }
 
 // QueryElo queries the AOE4 API and returns the corresponding Elo value as a string.
 func (r *request) QueryElo() (string, error) {
-	sm := &safeMap{respMap: make(map[string]string)}
-
-	if err := queryEloToMap(r, sm); err != nil {
-		return "", fmt.Errorf("error querying aoe api or inserting in map: %w", err)
+	response, err := query(r)
+	if err != nil {
+		return "", fmt.Errorf("error querying aoe api: %w", err)
 	}
 
-	if elo, ok := sm.respMap[r.payload.MatchType]; ok {
-		return elo, nil
+	if response.Count >= 0 {
+		return strconv.Itoa(response.Items[0].Elo), nil
 	}
+
 	return "", fmt.Errorf("no Elo value found for match type %s for username %s", r.payload.MatchType, r.payload.SearchPlayer)
 }
 
@@ -105,9 +92,9 @@ func (r *request) QueryElo() (string, error) {
 func (r *request) QueryAllElo() (map[string]string, error) {
 	var wg sync.WaitGroup
 	sm := &safeMap{respMap: make(map[string]string)}
+	req := *r
 
 	for _, teamSize := range getEloTypes() {
-		req := *r
 		if teamSize == "custom" {
 			req.payload.MatchType = teamSize
 			req.payload.TeamSize = ""
@@ -118,9 +105,15 @@ func (r *request) QueryAllElo() (map[string]string, error) {
 
 		wg.Add(1)
 		go func() {
-			if err := queryEloToMap(&req, sm); err != nil {
+			response, err := query(&req)
+			if err != nil {
 				fmt.Printf("error retrieving Elo from AOE api for %s: %v", req.payload.SearchPlayer, err)
+			} else {
+				sm.Lock()
+				defer sm.Unlock()
+				sm.respMap[r.payload.MatchType] = strconv.Itoa(response.Items[0].Elo)
 			}
+
 			wg.Done()
 		}()
 	}
