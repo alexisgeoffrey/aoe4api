@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -17,7 +18,7 @@ type (
 	Request interface {
 		Query() ([]playerInfo, error)
 		QueryElo() (string, error)
-		QueryAllElo() (map[string]string, error)
+		QueryAllElo(userId string) (map[string]string, error)
 	}
 
 	request struct {
@@ -69,7 +70,7 @@ type (
 
 const apiUrl = "https://api.ageofempires.com/api/ageiv/Leaderboard"
 
-// Query queries the AOE4 API and returns the API response as a Response struct.
+// Query queries the AOE4 API and returns the API response as a slice of playerInfo structs.
 func (r *request) Query() ([]playerInfo, error) {
 	result, err := query(r)
 	if err != nil {
@@ -95,7 +96,7 @@ func (r *request) QueryElo() (string, error) {
 
 // QueryAllElo queries the AOE4 API and returns Elo values for all Elo types
 // for a specific username as a map of Elo types and Elo values.
-func (r *request) QueryAllElo() (map[string]string, error) {
+func (r *request) QueryAllElo(userId string) (map[string]string, error) {
 	var wg sync.WaitGroup
 	sm := &safeMap{respMap: map[string]string{}}
 
@@ -122,9 +123,13 @@ func (r *request) QueryAllElo() (map[string]string, error) {
 				log.Printf("error retrieving Elo from AOE api for %s: %v", req.payload.SearchPlayer, err)
 			} else {
 				if len(response.Items) > 0 {
-					sm.Lock()
-					defer sm.Unlock()
-					sm.respMap[ts] = strconv.Itoa(response.Items[0].Elo)
+					for _, item := range response.Items {
+						if strings.Contains(item.UserID, userId) {
+							sm.Lock()
+							defer sm.Unlock()
+							sm.respMap[ts] = strconv.Itoa(item.Elo)
+						}
+					}
 				}
 			}
 

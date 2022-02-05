@@ -6,22 +6,7 @@ import (
 	"net/http"
 )
 
-type (
-	RequestBuilder interface {
-		SetHttpClient(*http.Client) RequestBuilder
-		SetUserAgent(string) RequestBuilder
-		SetRegion(Region) RequestBuilder
-		SetVersus(Versus) RequestBuilder
-		SetMatchType(MatchType) RequestBuilder
-		SetTeamSize(TeamSize) RequestBuilder
-		SetSearchPlayer(string) RequestBuilder
-		SetPage(int) RequestBuilder
-		SetCount(int) RequestBuilder
-		Request() (Request, error)
-	}
-
-	requestBuilder struct{ request }
-)
+type requestBuilder struct{ request }
 
 type Region int
 
@@ -63,7 +48,7 @@ const (
 	FourVFour
 )
 
-func NewRequestBuilder() RequestBuilder {
+func NewRequestBuilder() *requestBuilder {
 	return &requestBuilder{
 		request{
 			client: http.DefaultClient,
@@ -79,22 +64,22 @@ func NewRequestBuilder() RequestBuilder {
 	}
 }
 
-func (r *requestBuilder) SetHttpClient(client *http.Client) RequestBuilder {
+func (r *requestBuilder) SetHttpClient(client *http.Client) *requestBuilder {
 	r.client = client
 	return r
 }
 
-func (r *requestBuilder) SetUserAgent(userAgent string) RequestBuilder {
+func (r *requestBuilder) SetUserAgent(userAgent string) *requestBuilder {
 	r.userAgent = userAgent
 	return r
 }
 
-func (r *requestBuilder) SetRegion(reg Region) RequestBuilder {
+func (r *requestBuilder) SetRegion(reg Region) *requestBuilder {
 	r.payload.Region = int(reg)
 	return r
 }
 
-func (r *requestBuilder) SetVersus(vs Versus) RequestBuilder {
+func (r *requestBuilder) SetVersus(vs Versus) *requestBuilder {
 	var vsString string
 
 	switch vs {
@@ -108,7 +93,7 @@ func (r *requestBuilder) SetVersus(vs Versus) RequestBuilder {
 	return r
 }
 
-func (r *requestBuilder) SetMatchType(mt MatchType) RequestBuilder {
+func (r *requestBuilder) SetMatchType(mt MatchType) *requestBuilder {
 	var mtString string
 
 	switch mt {
@@ -130,7 +115,7 @@ func (r *requestBuilder) SetMatchType(mt MatchType) RequestBuilder {
 	return r
 }
 
-func (r *requestBuilder) SetTeamSize(ts TeamSize) RequestBuilder {
+func (r *requestBuilder) SetTeamSize(ts TeamSize) *requestBuilder {
 	var teamSizeString string
 
 	switch ts {
@@ -148,17 +133,17 @@ func (r *requestBuilder) SetTeamSize(ts TeamSize) RequestBuilder {
 	return r
 }
 
-func (r *requestBuilder) SetSearchPlayer(searchPlayer string) RequestBuilder {
+func (r *requestBuilder) SetSearchPlayer(searchPlayer string) *requestBuilder {
 	r.payload.SearchPlayer = searchPlayer
 	return r
 }
 
-func (r *requestBuilder) SetPage(page int) RequestBuilder {
+func (r *requestBuilder) SetPage(page int) *requestBuilder {
 	r.payload.Page = page
 	return r
 }
 
-func (r *requestBuilder) SetCount(count int) RequestBuilder {
+func (r *requestBuilder) SetCount(count int) *requestBuilder {
 	r.payload.Count = count
 	return r
 }
