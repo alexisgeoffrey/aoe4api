@@ -17,7 +17,7 @@ import (
 type (
 	Request interface {
 		Query() ([]playerInfo, error)
-		QueryElo(userId string) (string, error)
+		QueryElo(userId string) (int, error)
 		QueryAllElo(userId string) (map[string]string, error)
 	}
 
@@ -81,21 +81,21 @@ func (r *request) Query() ([]playerInfo, error) {
 }
 
 // QueryElo queries the AOE4 API and returns the corresponding Elo value as a string.
-func (r *request) QueryElo(userId string) (string, error) {
+func (r *request) QueryElo(userId string) (int, error) {
 	response, err := query(r)
 	if err != nil {
-		return "", fmt.Errorf("error querying aoe api: %w", err)
+		return 0, fmt.Errorf("error querying aoe api: %w", err)
 	}
 
 	if response.Count >= 0 {
 		for _, item := range response.Items {
 			if strings.Contains(item.UserID, userId) {
-				return strconv.Itoa(item.Elo), nil
+				return item.Elo, nil
 			}
 		}
 	}
 
-	return "", fmt.Errorf("no Elo value found for match type %s for username %s", r.payload.MatchType, r.payload.SearchPlayer)
+	return 0, fmt.Errorf("no Elo value found for match type %s for username %s", r.payload.MatchType, r.payload.SearchPlayer)
 }
 
 // QueryAllElo queries the AOE4 API and returns Elo values for all Elo types
