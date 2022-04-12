@@ -129,7 +129,7 @@ func (r *requestBuilder) SetTeamSize(ts TeamSize) *requestBuilder {
 		teamSizeString = "4v4"
 	}
 
-	r.payload.Versus = teamSizeString
+	r.payload.TeamSize = teamSizeString
 	return r
 }
 
