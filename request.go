@@ -24,55 +24,63 @@ type (
 	request struct {
 		client    *http.Client
 		userAgent string
-		payload   *payload
+		payload   payload
 	}
 
 	// A Payload represents the contents of a request to the AOE4 API.
 	payload struct {
-		Region       int    `json:"region"`
 		Versus       string `json:"versus"`
 		MatchType    string `json:"matchType"`
 		TeamSize     string `json:"teamSize"`
 		SearchPlayer string `json:"searchPlayer"`
+		Region       int    `json:"region"`
 		Page         int    `json:"page"`
 		Count        int    `json:"count"`
 	}
 
 	response struct {
-		Count int          `json:"count"`
 		Items []playerInfo `json:"items"`
+		Count int          `json:"count"`
 	}
 
 	playerInfo struct {
+		PlayerNumber interface{} `json:"playerNumber"` // For now, will always be nil
 		GameID       string      `json:"gameId"`
 		UserID       string      `json:"userId"`
-		RlUserID     int         `json:"rlUserId"`
 		UserName     string      `json:"userName"`
 		AvatarURL    string      `json:"avatarUrl"`
-		PlayerNumber interface{} `json:"playerNumber"` // For now, will always be nil
+		Region       string      `json:"region"`
+		RankLevel    string      `json:"rankLevel"`
+		RankIcon     string      `json:"rankIcon"`
+		RlUserID     int         `json:"rlUserId"`
 		Elo          int         `json:"elo"`
 		EloRating    int         `json:"eloRating"`
 		Rank         int         `json:"rank"`
-		Region       string      `json:"region"`
 		Wins         int         `json:"wins"`
 		WinPercent   float64     `json:"winPercent"`
 		Losses       int         `json:"losses"`
 		WinStreak    int         `json:"winStreak"`
-		RankLevel    string      `json:"rankLevel"`
-		RankIcon     string      `json:"rankIcon"`
 	}
 
 	safeMap struct {
-		sync.Mutex
 		respMap map[string]string
+		sync.Mutex
 	}
 )
 
 const apiUrl = "https://api.ageofempires.com/api/ageiv/Leaderboard"
 
+var eloTypes = [...]enum{
+	OneVOne,
+	TwoVTwo,
+	ThreeVThree,
+	FourVFour,
+	Custom,
+}
+
 // Query queries the AOE4 API and returns the API response as a slice of playerInfo structs.
 func (r *request) Query() ([]playerInfo, error) {
-	result, err := query(r)
+	result, err := r.query()
 	if err != nil {
 		return nil, fmt.Errorf("error querying aoe api: %w", err)
 	}
@@ -82,7 +90,7 @@ func (r *request) Query() ([]playerInfo, error) {
 
 // QueryElo queries the AOE4 API and returns the corresponding Elo value as a string.
 func (r *request) QueryElo(userId string) (int, error) {
-	response, err := query(r)
+	response, err := r.query()
 	if err != nil {
 		return 0, fmt.Errorf("error querying aoe api: %w", err)
 	}
@@ -104,25 +112,24 @@ func (r *request) QueryAllElo(userId string) (map[string]string, error) {
 	var wg sync.WaitGroup
 	sm := &safeMap{respMap: map[string]string{}}
 
-	for _, teamSize := range getEloTypes() {
-		payloadCopy := *r.payload
+	for _, et := range eloTypes {
 		req := request{
 			r.client,
 			r.userAgent,
-			&payloadCopy,
+			r.payload,
 		}
 
-		if teamSize == "custom" {
-			req.payload.MatchType = teamSize
+		if et == Custom {
+			req.payload.MatchType = et.String()
 			req.payload.TeamSize = ""
 		} else {
-			req.payload.MatchType = "unranked"
-			req.payload.TeamSize = teamSize
+			req.payload.MatchType = Unranked.String()
+			req.payload.TeamSize = et.String()
 		}
 
 		wg.Add(1)
 		go func(ts string) {
-			response, err := query(&req)
+			response, err := req.query()
 			if err != nil {
 				log.Printf("error retrieving Elo from AOE api for %s: %v", req.payload.SearchPlayer, err)
 			} else {
@@ -139,14 +146,14 @@ func (r *request) QueryAllElo(userId string) (map[string]string, error) {
 			}
 
 			wg.Done()
-		}(teamSize)
+		}(et.String())
 	}
 	wg.Wait()
 
 	return sm.respMap, nil
 }
 
-func query(r *request) (response, error) {
+func (r *request) query() (response, error) {
 	payloadBytes, err := json.Marshal(r.payload)
 	if err != nil {
 		return response{}, fmt.Errorf("error marshaling json payload: %w", err)
@@ -186,14 +193,4 @@ func query(r *request) (response, error) {
 	}
 
 	return respBodyJson, nil
-}
-
-func getEloTypes() [5]string {
-	return [...]string{
-		"1v1",
-		"2v2",
-		"3v3",
-		"4v4",
-		"custom",
-	}
 }

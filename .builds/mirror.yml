@@ -1,0 +1,9 @@
+image: alpine/latest
+secrets:
+  - 52f23d2b-2a06-4e3b-bef3-09e6d0b4aa2b
+  - 845e24c2-5495-42cd-9802-c0932534d056
+tasks:
+  - push-to-mirror: |
+      git clone https://git.sr.ht/~alexisgeoffrey/aoe4api mirror --mirror
+      cd mirror
+      git push git@github.com:alexisgeoffrey/aoe4api.git --mirror
