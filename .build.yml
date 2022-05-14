@@ -1,8 +1,6 @@
 image: alpine/latest
 packages:
   - go
-sources:
-  - https://git.sr.ht/~alexisgeoffrey/aoe4api
 tasks:
   - build: |
       cd aoe4api
