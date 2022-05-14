@@ -39,71 +39,41 @@ func (r Region) String() string {
 	return "unknown"
 }
 
-type Versus int
+type Versus string
 
 const (
-	Players Versus = iota
-	AI
+	Players Versus = "players"
+	AI      Versus = "ai"
 )
 
 func (v Versus) String() string {
-	switch v {
-	case Players:
-		return "players"
-	case AI:
-		return "ai"
-	}
-	return "unknown"
+	return string(v)
 }
 
-type MatchType int
+type MatchType string
 
 const (
-	Unranked MatchType = iota
-	Custom
-	EasyAI
-	MediumAI
-	HardAI
-	ExpertAI
+	Unranked MatchType = "unranked"
+	Custom   MatchType = "custom"
+	EasyAI   MatchType = "aieasy"
+	MediumAI MatchType = "aimedium"
+	HardAI   MatchType = "aihard"
+	ExpertAI MatchType = "aiexpert"
 )
 
 func (mt MatchType) String() string {
-	switch mt {
-	case Unranked:
-		return "unranked"
-	case Custom:
-		return "custom"
-	case EasyAI:
-		return "aieasy"
-	case MediumAI:
-		return "aimedium"
-	case HardAI:
-		return "aihard"
-	case ExpertAI:
-		return "aiexpert"
-	}
-	return "unknown"
+	return string(mt)
 }
 
-type TeamSize int
+type TeamSize string
 
 const (
-	OneVOne TeamSize = iota + 1
-	TwoVTwo
-	ThreeVThree
-	FourVFour
+	OneVOne     TeamSize = "1v1"
+	TwoVTwo     TeamSize = "2v2"
+	ThreeVThree TeamSize = "3v3"
+	FourVFour   TeamSize = "4v4"
 )
 
 func (ts TeamSize) String() string {
-	switch ts {
-	case OneVOne:
-		return "1v1"
-	case TwoVTwo:
-		return "2v2"
-	case ThreeVThree:
-		return "3v3"
-	case FourVFour:
-		return "4v4"
-	}
-	return "unknown"
+	return string(ts)
 }

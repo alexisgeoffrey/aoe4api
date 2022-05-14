@@ -6,21 +6,26 @@ import (
 	"net/http"
 )
 
-type requestBuilder struct{ request }
+type requestBuilder struct {
+	client       *http.Client
+	userAgent    string
+	searchPlayer string
+	versus       Versus
+	matchType    MatchType
+	teamSize     TeamSize
+	region       Region
+	page         int
+	count        int
+}
 
 func NewRequestBuilder() *requestBuilder {
 	return &requestBuilder{
-		request{
-			client: http.DefaultClient,
-			payload: payload{
-				Versus:    "players",
-				MatchType: "unranked",
-				TeamSize:  "1v1",
-				Region:    int(Global),
-				Page:      1,
-				Count:     100,
-			},
-		},
+		versus:    Players,
+		matchType: Unranked,
+		teamSize:  OneVOne,
+		region:    Global,
+		page:      1,
+		count:     100,
 	}
 }
 
@@ -35,65 +40,73 @@ func (r *requestBuilder) SetUserAgent(userAgent string) *requestBuilder {
 }
 
 func (r *requestBuilder) SetRegion(reg Region) *requestBuilder {
-	r.payload.Region = int(reg)
+	r.region = reg
 	return r
 }
 
 func (r *requestBuilder) SetVersus(vs Versus) *requestBuilder {
-	r.payload.Versus = vs.String()
+	r.versus = vs
 	return r
 }
 
 func (r *requestBuilder) SetMatchType(mt MatchType) *requestBuilder {
-	r.payload.MatchType = mt.String()
+	r.matchType = mt
 	return r
 }
 
 func (r *requestBuilder) SetTeamSize(ts TeamSize) *requestBuilder {
-	r.payload.TeamSize = ts.String()
+	r.teamSize = ts
 	return r
 }
 
 func (r *requestBuilder) SetSearchPlayer(searchPlayer string) *requestBuilder {
-	r.payload.SearchPlayer = searchPlayer
+	r.searchPlayer = searchPlayer
 	return r
 }
 
 func (r *requestBuilder) SetPage(page int) *requestBuilder {
-	r.payload.Page = page
+	r.page = page
 	return r
 }
 
 func (r *requestBuilder) SetCount(count int) *requestBuilder {
-	r.payload.Count = count
+	r.count = count
 	return r
 }
 
 func (r *requestBuilder) Request() (Request, error) {
-	if r.payload.Page < 1 {
+	if r.page < 1 {
 		return nil, errors.New("cannot have a zero or negative page number")
 	}
-	if r.payload.Count < 1 {
+	if r.count < 1 {
 		return nil, errors.New("cannot have a zero or negative result count")
 	}
-	if r.payload.Region < int(Europe) || r.payload.Region > int(Global) {
+	if r.region < Europe || r.region > Global {
 		return nil, errors.New("invalid region")
 	}
 
-	switch r.payload.MatchType {
-	case "unranked", "custom":
-		if r.payload.Versus == "ai" {
-			return nil, fmt.Errorf("cannot have both match type as '%s' and versus as 'ai'", r.payload.MatchType)
+	switch r.matchType {
+	case Unranked, Custom:
+		if r.versus == AI {
+			return nil, fmt.Errorf("cannot have both match type as '%s' and versus as 'ai'", r.matchType)
 		}
-	case "aieasy", "aimedium", "aihard", "aiexpert":
-		if r.payload.Versus == "players" {
-			return nil, fmt.Errorf("cannot have both match type as '%s' and versus as 'players'", r.payload.MatchType)
+	case EasyAI, MediumAI, HardAI, ExpertAI:
+		if r.versus == Players {
+			return nil, fmt.Errorf("cannot have both match type as '%s' and versus as 'players'", r.matchType)
 		}
 	}
 
 	return &request{
 		r.client,
 		r.userAgent,
-		r.payload,
+		payload{
+			string(r.versus),
+			string(r.matchType),
+			string(r.teamSize),
+			r.searchPlayer,
+			int(r.region),
+			r.page,
+			r.count,
+		},
 	}, nil
 }
