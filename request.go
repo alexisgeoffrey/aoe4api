@@ -95,7 +95,7 @@ func (r *request) QueryElo(userId string) (int, error) {
 		return 0, fmt.Errorf("error querying aoe api: %w", err)
 	}
 
-	if response.Count >= 0 {
+	if response.Count > 0 {
 		for _, item := range response.Items {
 			if strings.Contains(item.UserID, userId) {
 				return item.Elo, nil
