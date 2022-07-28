@@ -20,6 +20,7 @@ type requestBuilder struct {
 
 func NewRequestBuilder() *requestBuilder {
 	return &requestBuilder{
+		client:    http.DefaultClient,
 		versus:    Players,
 		matchType: Unranked,
 		teamSize:  OneVOne,
